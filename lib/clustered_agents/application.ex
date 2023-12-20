@@ -11,10 +11,7 @@ defmodule ClusteredAgents.Application do
       ClusteredAgentsWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:clustered_agents, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: ClusteredAgents.PubSub},
-      # Start the Finch HTTP client for sending emails
-      {Finch, name: ClusteredAgents.Finch},
-      # Start a worker by calling: ClusteredAgents.Worker.start_link(arg)
-      # {ClusteredAgents.Worker, arg},
+      state_collection_supervisor_spec(),
       # Start to serve requests, typically the last entry
       ClusteredAgentsWeb.Endpoint
     ]
@@ -23,6 +20,26 @@ defmodule ClusteredAgents.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: ClusteredAgents.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp state_collection_supervisor_spec() do
+    child_specs = [
+      {DynamicSupervisor, name: ClusteredAgents.StateSupervisor,
+        strategy: :one_for_one},
+      {Registry, name: ClusteredAgents.Registry, keys: :unique}
+    ]
+
+    opts = [
+      strategy: :one_for_one,
+      name: ClusteredAgents.StateCollectionSupervisor
+    ]
+
+    %{
+      id: ClusteredAgents.StateCollectionSupervisor,
+      type: :supervisor,
+      restart: :permanent,
+      start: {Supervisor, :start_link, [child_specs, opts]}
+    }
   end
 
   # Tell Phoenix to update the endpoint configuration

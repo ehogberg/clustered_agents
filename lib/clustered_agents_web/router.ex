@@ -17,7 +17,7 @@ defmodule ClusteredAgentsWeb.Router do
   scope "/", ClusteredAgentsWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    get "/phoenix", PageController, :home
   end
 
   # Other scopes may use custom stacks.
