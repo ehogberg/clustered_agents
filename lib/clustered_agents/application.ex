@@ -11,6 +11,7 @@ defmodule ClusteredAgents.Application do
       ClusteredAgentsWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:clustered_agents, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: ClusteredAgents.PubSub},
+      cluster_supervisor_spec(),
       state_collection_supervisor_spec(),
       # Start to serve requests, typically the last entry
       ClusteredAgentsWeb.Endpoint
@@ -41,6 +42,18 @@ defmodule ClusteredAgents.Application do
       start: {Supervisor, :start_link, [child_specs, opts]}
     }
   end
+
+  defp cluster_supervisor_spec() do
+    topologies = Application.get_env(
+      :clustered_agents, :cluster_topologies
+    ) || []
+
+    {
+      Cluster.Supervisor,
+      [topologies, [name: ClusteredAgents.ClusterSupervisor]]
+    }
+  end
+
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.

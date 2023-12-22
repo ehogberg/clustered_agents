@@ -17,5 +17,16 @@ config :swoosh, local: false
 # Do not print debug messages in production
 config :logger, level: :info
 
+
+config :clustered_agents, :cluster_topologies,
+  [
+    epmd: [
+      strategy: Elixir.Cluster.Strategy.Gossip,
+      config: [
+        secret: "supersecretcookie"
+      ]
+    ]
+  ]
+
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.

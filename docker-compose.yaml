@@ -1,0 +1,19 @@
+services:
+  app1:
+    image: clustered_agents
+    environment:
+      - SECRET_KEY_BASE=rsScWn06eosWdKhy3vHdyY5NKV0zYWBF8o/vxJZiFFsojPbVDENYf71SS6bZvSfZ
+      - RELEASE_NODE=app1
+      - PORT=4001
+#      - RELEASE_DISTRIBUTION=name
+    ports:
+      - 127.0.0.1:4001:4001
+  app2:
+    image: clustered_agents
+    environment:
+      - SECRET_KEY_BASE=rsScWn06eosWdKhy3vHdyY5NKV0zYWBF8o/vxJZiFFsojPbVDENYf71SS6bZvSfZ
+      - RELEASE_NODE=app2
+      - PORT=4002
+#      - RELEASE_DISTRIBUTION=name
+    ports:
+      - 127.0.0.1:4002:4002

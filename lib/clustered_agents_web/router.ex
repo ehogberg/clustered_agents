@@ -17,6 +17,7 @@ defmodule ClusteredAgentsWeb.Router do
   scope "/", ClusteredAgentsWeb do
     pipe_through :browser
 
+    live "/", StateLive
     get "/phoenix", PageController, :home
   end
 

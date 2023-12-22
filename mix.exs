@@ -48,7 +48,8 @@ defmodule ClusteredAgents.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:plug_cowboy, "~> 2.5"},
-      {:uuid, "~> 1.1"}
+      {:uuid, "~> 1.1"},
+      {:libcluster, "~> 3.3"},
     ]
   end
 
