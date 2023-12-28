@@ -50,6 +50,9 @@ defmodule ClusteredAgents.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:uuid, "~> 1.1"},
       {:libcluster, "~> 3.3"},
+      {:ecto, "~> 3.10"},
+      {:phoenix_ecto, "~> 4.0"},
+      {:horde, "~> 0.8.5"}
     ]
   end
 

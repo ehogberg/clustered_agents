@@ -19,6 +19,7 @@ defmodule ClusteredAgentsWeb.Router do
 
     live "/", StateLive
     get "/phoenix", PageController, :home
+    get "/cluster", PageController, :cluster
   end
 
   # Other scopes may use custom stacks.

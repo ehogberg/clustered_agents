@@ -25,9 +25,10 @@ defmodule ClusteredAgents.Application do
 
   defp state_collection_supervisor_spec() do
     child_specs = [
-      {DynamicSupervisor, name: ClusteredAgents.StateSupervisor,
-        strategy: :one_for_one},
-      {Registry, name: ClusteredAgents.Registry, keys: :unique}
+      {Horde.DynamicSupervisor, name: ClusteredAgents.StateSupervisor,
+        strategy: :one_for_one, members: :auto},
+      {Horde.Registry, name: ClusteredAgents.Registry, keys: :unique,
+        members: :auto}
     ]
 
     opts = [

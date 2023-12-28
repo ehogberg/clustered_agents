@@ -20,10 +20,10 @@ config :logger, level: :info
 
 config :clustered_agents, :cluster_topologies,
   [
-    epmd: [
+    gossip: [
       strategy: Elixir.Cluster.Strategy.Gossip,
       config: [
-        secret: "supersecretcookie"
+        debug: true
       ]
     ]
   ]
