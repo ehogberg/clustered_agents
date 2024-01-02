@@ -1,6 +1,5 @@
 defmodule ClusteredAgents.State do
   alias Ecto.Changeset
-  alias ClusteredAgents.State
   alias ClusteredAgentsWeb.Endpoint
   use Ecto.Schema
 
@@ -79,7 +78,7 @@ defmodule ClusteredAgents.State do
     cs = changeset(%__MODULE__{}, attrs)
 
     with  {:ok, state} <- Ecto.Changeset.apply_action(cs, :validate),
-          {:ok, pid} <- Horde.DynamicSupervisor.start_child(
+          {:ok, _pid} <- Horde.DynamicSupervisor.start_child(
         ClusteredAgents.StateSupervisor,
         {__MODULE__, state}
       ) do

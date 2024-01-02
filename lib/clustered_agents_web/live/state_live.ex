@@ -43,11 +43,49 @@ defmodule ClusteredAgentsWeb.StateLive do
     |> State.changeset(params)
     |> Map.put(:action, :validate)
 
-    {:noreply, assign_form(socket, cs)}
+    {
+      :noreply,
+      socket
+      |> assign_form(cs)
+    }
   end
 
   @impl true
   def handle_event("save", %{"state" => params}, socket) do
+    persist_state(socket.assigns.persistence_type, params, socket)
+  end
+
+  @impl true
+  def handle_event("cancel_edit",_, socket) do
+    {
+      :noreply,
+      socket
+      |> assign_form(State.changeset(%State{}))
+      |> assign_persistence_type(:add)
+    }
+  end
+
+  @impl true
+  def handle_event("edit_state", %{"state-id" => state_id}, socket) do
+    agent = State.get_state(state_id)
+    {
+      :noreply,
+      socket
+      |> assign_form(State.changeset(agent))
+    }
+  end
+
+  @impl true
+  def handle_event("delete_state", %{"state-id" => state_id}, socket) do
+    :ok = State.delete_state(state_id)
+    {
+      :noreply,
+      socket
+    }
+  end
+
+
+  defp persist_state(:add, params, socket) do
     params = Map.merge(params, %{
       "id" => Ecto.UUID.generate(),
       "updated_at" => DateTime.utc_now()
@@ -72,25 +110,13 @@ defmodule ClusteredAgentsWeb.StateLive do
     end
   end
 
-  @impl true
-  def handle_event("edit_state", %{"state-id" => state_id}, socket) do
-    agent = State.get_state(state_id) |> IO.inspect()
-    {
-      :noreply,
-      socket
-      |> assign_form(State.changeset(agent))
-    }
-  end
+  defp persist_state(:update, params, socket) do
+    curr_state = State.get_state(params.id)
 
-  @impl true
-  def handle_event("delete_state", %{"state-id" => state_id}, socket) do
-    :ok = State.delete_state(state_id)
-    {
-      :noreply,
-      socket
-    }
-  end
+    if curr_state.updated_at <> params.updated_at do
+    end
 
+  end
 
   @impl true
   def handle_info(
@@ -151,4 +177,5 @@ defmodule ClusteredAgentsWeb.StateLive do
     IO.inspect(msg)
     {:noreply, socket}
   end
+
 end
