@@ -22,7 +22,7 @@ defmodule ClusteredAgents.State do
       id:  state.id,
       value: state.value,
       description: state.description,
-      updated_at: DateTime.utc_now()
+      updated_at: DateTime.utc_now(:millisecond)
     }
 
     name = state_name(state.id)
@@ -70,7 +70,6 @@ defmodule ClusteredAgents.State do
     attrs =
       attrs
       |> Map.put_new("id", Ecto.UUID.generate())
-      |> Map.put("updated_at", DateTime.utc_now())
 
     cs = changeset(%__MODULE__{}, attrs)
 
@@ -83,26 +82,30 @@ defmodule ClusteredAgents.State do
     end
   end
 
-  def update_state(%__MODULE__{} = attrs) do
-    with  :ok <- check_for_stale_agent_data(attrs),
-          :ok <- delete_state(attrs.id),
-          {:ok, state} <- add_state(attrs) do
-            {:ok, state}
+  def update_state(%__MODULE__{} = state, attrs) do
+    with  :ok <- check_for_stale_agent_data(state),
+          (%Ecto.Changeset{} = cs) = changeset(state, attrs),
+          {:ok, updated_state} = Ecto.Changeset.apply_action(cs, :validate),
+          :ok <- delete_state(state.id),
+          {:ok, _pid} <- Horde.DynamicSupervisor.start_child(
+            ClusteredAgents.StateSupervisor, {__MODULE__, updated_state}
+          ) do
+            {:ok, get_state(updated_state.id)}
     end
   end
 
-  defp check_for_stale_agent_data(attrs)
-    when is_binary(attrs.id) do
-    existing_agent = get_state(attrs.id)
-    if existing_agent.updated_at == attrs.updated_at do
+  defp check_for_stale_agent_data(state)
+    when is_binary(state.id) do
+    existing_agent = get_state(state.id)
+    if DateTime.compare(existing_agent.updated_at,state.updated_at) == :eq do
       :ok
     else
       {
         :error,
         {
           :stale_agent_data,
-          attrs.id,
-          attrs.updated_at,
+          state.id,
+          state.updated_at,
           existing_agent.updated_at
         }
       }

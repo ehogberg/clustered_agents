@@ -14,11 +14,15 @@ defmodule ClusteredAgentsWeb.StateLive do
       :ok,
       socket
       |> assign_cluster_nodes()
+      |> assign_state_object(nil)
       |> assign_form(State.changeset(%State{}))
       |> assign_agent_list()
       |> assign_persistence_type(:add)
     }
   end
+
+  defp assign_state_object(socket, state_object),
+    do: assign(socket, :state_object, state_object)
 
   defp assign_cluster_nodes(socket),
    do: assign(socket, :cluster_nodes, [Node.self() | Node.list()])
@@ -67,12 +71,13 @@ defmodule ClusteredAgentsWeb.StateLive do
 
   @impl true
   def handle_event("edit_state", %{"state-id" => state_id}, socket) do
-    agent = State.get_state(state_id)
+    state = State.get_state(state_id)
     {
       :noreply,
       socket
+      |> assign_state_object(state)
       |> assign_persistence_type(:update)
-      |> assign_form(State.changeset(agent))
+      |> assign_form(State.changeset(state))
     }
   end
 
@@ -107,7 +112,7 @@ defmodule ClusteredAgentsWeb.StateLive do
   end
 
   defp persist_state(:update, params, socket) do
-    case State.update_state(params) do
+    case State.update_state(socket.assigns.state_object, params) do
       {:ok, (%State{} = _state)} ->
         {
           :noreply,
