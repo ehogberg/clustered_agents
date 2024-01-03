@@ -1,8 +1,8 @@
 services:
   app:
-    image: clustered_agents
+    image: ehogberg/clustered_agents:6
     environment:
       - SECRET_KEY_BASE=rsScWn06eosWdKhy3vHdyY5NKV0zYWBF8o/vxJZiFFsojPbVDENYf71SS6bZvSfZ
       - RELEASE_COOKIE=delicious
     ports:
-      - 4000
+      - 40001-40020:4000

@@ -71,6 +71,7 @@ defmodule ClusteredAgentsWeb.StateLive do
     {
       :noreply,
       socket
+      |> assign_persistence_type(:update)
       |> assign_form(State.changeset(agent))
     }
   end
@@ -86,11 +87,6 @@ defmodule ClusteredAgentsWeb.StateLive do
 
 
   defp persist_state(:add, params, socket) do
-    params = Map.merge(params, %{
-      "id" => Ecto.UUID.generate(),
-      "updated_at" => DateTime.utc_now()
-    })
-
     case State.add_state(params) do
       {:ok, (%State{} = state)} ->
         {
@@ -111,11 +107,22 @@ defmodule ClusteredAgentsWeb.StateLive do
   end
 
   defp persist_state(:update, params, socket) do
-    curr_state = State.get_state(params.id)
+    case State.update_state(params) do
+      {:ok, (%State{} = _state)} ->
+        {
+          :noreply,
+          socket
+          |> assign_form(State.changeset(%State{}))
+          |> assign_persistence_type(:add)
+        }
 
-    if curr_state.updated_at <> params.updated_at do
+      {:error, %Ecto.Changeset{} = cs} ->
+        {
+          :noreply,
+          socket
+          |> assign_form(cs)
+        }
     end
-
   end
 
   @impl true
@@ -177,5 +184,12 @@ defmodule ClusteredAgentsWeb.StateLive do
     IO.inspect(msg)
     {:noreply, socket}
   end
+
+  # Function component helpers for the view
+  def editor_title(%{persistence_type: :add} = assigns),
+    do: ~H|<h2 class="font-bold text-blue-700">Define A New Stateful Object</h2>|
+
+  def editor_title(%{persistence_type: :update} = assigns),
+    do: ~H|<h2 class="font-bold text-blue-700">Updating Stateful Object</h2>|
 
 end

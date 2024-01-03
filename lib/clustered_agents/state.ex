@@ -67,13 +67,10 @@ defmodule ClusteredAgents.State do
     )
 
   def add_state(attrs) do
-    attrs = Map.merge(
-      %{
-        "id" => Ecto.UUID.generate(),
-        "updated_at" => DateTime.utc_now()
-      },
+    attrs =
       attrs
-    )
+      |> Map.put_new("id", Ecto.UUID.generate())
+      |> Map.put("updated_at", DateTime.utc_now())
 
     cs = changeset(%__MODULE__{}, attrs)
 
@@ -87,13 +84,32 @@ defmodule ClusteredAgents.State do
   end
 
   def update_state(%__MODULE__{} = attrs) do
-    Agent.update(
-      state_name(attrs.id),
-      fn _ -> %{ attrs | updated_at: DateTime.utc_now()} end
-    )
+    with  :ok <- check_for_stale_agent_data(attrs),
+          :ok <- delete_state(attrs.id),
+          {:ok, state} <- add_state(attrs) do
+            {:ok, state}
+    end
   end
 
-  def delete_state(id) do
+  defp check_for_stale_agent_data(attrs)
+    when is_binary(attrs.id) do
+    existing_agent = get_state(attrs.id)
+    if existing_agent.updated_at == attrs.updated_at do
+      :ok
+    else
+      {
+        :error,
+        {
+          :stale_agent_data,
+          attrs.id,
+          attrs.updated_at,
+          existing_agent.updated_at
+        }
+      }
+    end
+  end
+
+  def delete_state(id) when is_binary(id) do
     pid = id
     |> pid_for_state()
     |> List.first()
