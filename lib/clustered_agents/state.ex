@@ -2,6 +2,7 @@ defmodule ClusteredAgents.State do
   alias Ecto.Changeset
   alias ClusteredAgentsWeb.Endpoint
   use Ecto.Schema
+  use Retry
 
   embedded_schema do
     field :description, :string
@@ -78,14 +79,14 @@ defmodule ClusteredAgents.State do
         ClusteredAgents.StateSupervisor,
         {__MODULE__, state}
       ) do
-        {:ok, state}
+        {:ok, get_state(attrs["id"])}
     end
   end
 
   def update_state(%__MODULE__{} = state, attrs) do
     with  :ok <- check_for_stale_agent_data(state),
-          (%Ecto.Changeset{} = cs) = changeset(state, attrs),
-          {:ok, updated_state} = Ecto.Changeset.apply_action(cs, :validate),
+          (%Ecto.Changeset{} = cs) <- changeset(state, attrs),
+          {:ok, updated_state} <- Ecto.Changeset.apply_action(cs, :validate),
           :ok <- delete_state(state.id),
           {:ok, _pid} <- Horde.DynamicSupervisor.start_child(
             ClusteredAgents.StateSupervisor, {__MODULE__, updated_state}
@@ -130,11 +131,11 @@ defmodule ClusteredAgents.State do
     )
   end
 
-  def get_state(pid) when is_pid(pid) do
-    Agent.get(pid, & &1)
+  def get_state(id) do
+    retry with: constant_backoff(100) |> Stream.take(10) do
+      Agent.get(state_name(id), & &1)
+    end
   end
-
-  def get_state(id), do: Agent.get(state_name(id), & &1)
 
   def pid_for_state(id),
     do: Horde.Registry.lookup(ClusteredAgents.Registry, id)

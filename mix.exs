@@ -19,7 +19,7 @@ defmodule ClusteredAgents.MixProject do
   def application do
     [
       mod: {ClusteredAgents.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :retry]
     ]
   end
 
@@ -52,7 +52,8 @@ defmodule ClusteredAgents.MixProject do
       {:libcluster, "~> 3.3"},
       {:ecto, "~> 3.10"},
       {:phoenix_ecto, "~> 4.0"},
-      {:horde, "~> 0.8.5"}
+      {:horde, "~> 0.8.5"},
+      {:retry, "~> 0.18"}
     ]
   end
 

@@ -65,6 +65,7 @@ defmodule ClusteredAgentsWeb.StateLive do
       :noreply,
       socket
       |> assign_form(State.changeset(%State{}))
+      |> assign_state_object(nil)
       |> assign_persistence_type(:add)
     }
   end
@@ -114,11 +115,28 @@ defmodule ClusteredAgentsWeb.StateLive do
   defp persist_state(:update, params, socket) do
     case State.update_state(socket.assigns.state_object, params) do
       {:ok, (%State{} = _state)} ->
+        id = socket.assigns.state_object.id
+
         {
           :noreply,
           socket
           |> assign_form(State.changeset(%State{}))
           |> assign_persistence_type(:add)
+          |> assign_state_object(nil)
+          |> put_flash(:info, "Agent #{id} updated.")
+        }
+
+      {:error, {:stale_agent_data, id, _, _}} ->
+        current_agent_state = State.get_state(id)
+        {
+          :noreply,
+          socket
+          |> assign_form(State.changeset(%State{}))
+          |> assign_state_object(current_agent_state)
+          |> put_flash(
+            :warn,
+            "Agent #{id} has recent updates which conflict with your edits.  Agent state reloaded."
+          )
         }
 
       {:error, %Ecto.Changeset{} = cs} ->
