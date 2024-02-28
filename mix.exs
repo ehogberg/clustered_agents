@@ -33,7 +33,7 @@ defmodule ClusteredAgents.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.7.10"},
-      {:phoenix_html, "~> 3.3"},
+      {:phoenix_html, "~> 4.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.1"},
       {:floki, ">= 0.30.0", only: :test},
@@ -52,7 +52,7 @@ defmodule ClusteredAgents.MixProject do
       {:libcluster, "~> 3.3"},
       {:ecto, "~> 3.10"},
       {:phoenix_ecto, "~> 4.0"},
-      {:horde, "~> 0.8.5"},
+      {:horde, "~> 0.9.0"},
       {:retry, "~> 0.18"}
     ]
   end
