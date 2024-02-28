@@ -7,9 +7,7 @@ defmodule ClusteredAgentsWeb.StateLive do
   @impl true
   def mount(_, _, socket) do
     Endpoint.subscribe("agents")
-
     :net_kernel.monitor_nodes(true)
-
     {
       :ok,
       socket
