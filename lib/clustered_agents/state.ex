@@ -2,7 +2,8 @@ defmodule ClusteredAgents.State do
   alias Ecto.Changeset
   alias ClusteredAgentsWeb.Endpoint
   use Ecto.Schema
-  use Retry
+  use Retry.Annotation
+  require Logger
 
   embedded_schema do
     field :description, :string
@@ -131,9 +132,22 @@ defmodule ClusteredAgents.State do
     )
   end
 
+  @doc """
+  Reading the current value of a stateful object must support a retry scenario:
+  the case where a object is being relocated elsewhere in the cluster but the
+  registry has not yet been updated to specify the new pid; in this case,
+  attempting to read the old pid will return a process exit and raise.  We catch
+  that here and support a reasonable number of retry attempts to allow the
+  registry to catch up to the rebalanced object.
+  """
+  @retry with: exponential_backoff() |> cap(1_000) |> Stream.take(10)
   def get_state(id) do
-    retry with: constant_backoff(100) |> Stream.take(10) do
+    try do
       Agent.get(state_name(id), & &1)
+    catch
+      :exit, e ->
+        Logger.debug("Expired/invalid agent process for ID #{id}; re-reading")
+        {:error, e}
     end
   end
 
