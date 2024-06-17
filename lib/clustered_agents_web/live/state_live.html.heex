@@ -1,56 +1,61 @@
 <div class="flex">
-    <div class="container grid m-auto grid-cols-2 gap-20">
+  <div class="container grid m-auto grid-cols-2 gap-20">
+    <div class="shadow-lg border-t-2 border-t-blue-700 p-6">
+      <.editor_title persistence_type={@persistence_type} />
 
-        <div class="shadow-lg border-t-2 border-t-blue-700 p-6">
-            <.editor_title persistence_type={@persistence_type} />
+      <.simple_form for={@form} phx-change="validate" phx-submit="save">
+        <.input field={@form[:value]} label="Value" />
+        <.input field={@form[:description]} label="Description" />
 
-            <.simple_form for={@form}
-                phx-change="validate"
-                phx-submit="save"
-            >
-                <.input field={@form[:value]} label="Value"/>
-                <.input field={@form[:description]} label="Description" />
-
-                <input class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md" type="submit" value="Save" />
-                <input class="bg-gray-300 hover:bg-gray-500 text-black hover:text-white font-bold py-2 px-4 rounded-md"
-                    phx-click="cancel_edit" type="button" value="Cancel" />
-            </.simple_form>
-        </div>
-
-        <div class="shadow-lg p-6 border-t-2 border-t-blue-700">
-            <h2 class="text-blue-700 font-bold mb-6">Cluster Members</h2>
-
-            <ul>
-                <li :for={node <- @cluster_nodes}
-                    class="">
-                    <span>
-                    <%= node %>
-                    <.icon name="hero-check-mini" :if={node == Node.self()} class="align-text-bottom"/>
-                    </span>
-                </li>
-            </ul>
-        </div>
-
-        <div class="col-span-2 border-t-2 border-t-blue-700 shadow-lg p-6">
-            <h2 class="font-bold text-blue-700">Known Stateful Objects</h2>
-            <.table id="agents" rows={@streams.agent_list} >
-                <:col :let={ {_, state}} label="ID"><%= state.id %></:col>
-                <:col :let={ {_, state}} label="Node"><%= state.node %></:col>
-                <:col :let={{_,state}} label="PID"><%= :erlang.pid_to_list(state.pid) %></:col>
-                <:action :let={{_,state}}>
-                    <.link phx-click="edit_state"
-                        phx-value-state-id={state.id}>
-                        Edit
-                    </.link>
-                </:action>
-                <:action :let={{dom_id,state}}>
-                    <.link phx-click={JS.push("delete_state", value: %{"state-id" => state.id}) |> hide("##{dom_id}")}
-                        data-confirm="Are you sure?">
-                        Delete
-                    </.link>
-                </:action>
-            </.table>
-        </div>
+        <input
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
+          type="submit"
+          value="Save"
+        />
+        <input
+          class="bg-gray-300 hover:bg-gray-500 text-black hover:text-white font-bold py-2 px-4 rounded-md"
+          phx-click="cancel_edit"
+          type="button"
+          value="Cancel"
+        />
+      </.simple_form>
     </div>
 
+    <div class="shadow-lg p-6 border-t-2 border-t-blue-700">
+      <h2 class="text-blue-700 font-bold mb-6">Cluster Members</h2>
+
+      <ul>
+        <li :for={node <- @cluster_nodes} class="">
+          <span>
+            <%= node %>
+            <.icon :if={node == Node.self()} name="hero-check-mini" class="align-text-bottom" />
+          </span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="col-span-2 border-t-2 border-t-blue-700 shadow-lg p-6">
+      <h2 class="font-bold text-blue-700">Known Stateful Objects</h2>
+      <.table id="agents" rows={@streams.agent_list}>
+        <:col :let={{_, state}} label="ID"><%= state.id %></:col>
+        <:col :let={{_, state}} label="Node"><%= state.node %></:col>
+        <:col :let={{_, state}} label="PID"><%= :erlang.pid_to_list(state.pid) %></:col>
+        <:action :let={{_, state}}>
+          <.link phx-click="edit_state" phx-value-state-id={state.id}>
+            Edit
+          </.link>
+        </:action>
+        <:action :let={{dom_id, state}}>
+          <.link
+            phx-click={
+              JS.push("delete_state", value: %{"state-id" => state.id}) |> hide("##{dom_id}")
+            }
+            data-confirm="Are you sure?"
+          >
+            Delete
+          </.link>
+        </:action>
+      </.table>
+    </div>
+  </div>
 </div>

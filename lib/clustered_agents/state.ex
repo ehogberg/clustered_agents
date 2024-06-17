@@ -1,4 +1,6 @@
 defmodule ClusteredAgents.State do
+  use Agent
+
   alias Ecto.Changeset
   alias ClusteredAgentsWeb.Endpoint
   use Ecto.Schema
@@ -6,22 +8,14 @@ defmodule ClusteredAgents.State do
   require Logger
 
   embedded_schema do
-    field :description, :string
-    field :value, :integer
-    field :updated_at, :utc_datetime
-  end
-
-  def child_spec(%__MODULE__{} = state) do
-    %{
-      id: state.id,
-      start: {__MODULE__, :start_link, [state]},
-      restart: :transient
-    }
+    field(:description, :string)
+    field(:value, :integer)
+    field(:updated_at, :utc_datetime)
   end
 
   def start_link(%__MODULE__{} = state) do
     s = %__MODULE__{
-      id:  state.id,
+      id: state.id,
       value: state.value,
       description: state.description,
       updated_at: DateTime.utc_now(:millisecond)
@@ -39,10 +33,10 @@ defmodule ClusteredAgents.State do
 
         {:ok, pid}
 
-      err -> err
+      err ->
+        err
     end
   end
-
 
   def changeset(%__MODULE__{} = state, attrs \\ %{}) do
     state
@@ -55,18 +49,18 @@ defmodule ClusteredAgents.State do
   def list_states(),
     do: Horde.DynamicSupervisor.which_children(ClusteredAgents.StateSupervisor)
 
-
   def state_ids(),
-    do: Horde.Registry.select(
-      ClusteredAgents.Registry,
-      [
-        {
-          {:"$1", :"$2", :_},
-          [],
-          [{{:"$1", :"$2"}}]
-        }
-      ]
-    )
+    do:
+      Horde.Registry.select(
+        ClusteredAgents.Registry,
+        [
+          {
+            {:"$1", :"$2", :_},
+            [],
+            [{{:"$1", :"$2"}}]
+          }
+        ]
+      )
 
   def add_state(attrs) do
     attrs =
@@ -75,31 +69,35 @@ defmodule ClusteredAgents.State do
 
     cs = changeset(%__MODULE__{}, attrs)
 
-    with  {:ok, state} <- Ecto.Changeset.apply_action(cs, :validate),
-          {:ok, _pid} <- Horde.DynamicSupervisor.start_child(
-        ClusteredAgents.StateSupervisor,
-        {__MODULE__, state}
-      ) do
-        {:ok, get_state(attrs["id"])}
+    with {:ok, state} <- Ecto.Changeset.apply_action(cs, :validate),
+         {:ok, _pid} <-
+           Horde.DynamicSupervisor.start_child(
+             ClusteredAgents.StateSupervisor,
+             {__MODULE__, state}
+           ) do
+      {:ok, get_state(attrs["id"])}
     end
   end
 
   def update_state(%__MODULE__{} = state, attrs) do
-    with  :ok <- check_for_stale_agent_data(state),
-          (%Ecto.Changeset{} = cs) <- changeset(state, attrs),
-          {:ok, updated_state} <- Ecto.Changeset.apply_action(cs, :validate),
-          :ok <- delete_state(state.id),
-          {:ok, _pid} <- Horde.DynamicSupervisor.start_child(
-            ClusteredAgents.StateSupervisor, {__MODULE__, updated_state}
-          ) do
-            {:ok, get_state(updated_state.id)}
+    with :ok <- check_for_stale_agent_data(state),
+         %Ecto.Changeset{} = cs <- changeset(state, attrs),
+         {:ok, updated_state} <- Ecto.Changeset.apply_action(cs, :validate),
+         :ok <- delete_state(state.id),
+         {:ok, _pid} <-
+           Horde.DynamicSupervisor.start_child(
+             ClusteredAgents.StateSupervisor,
+             {__MODULE__, updated_state}
+           ) do
+      {:ok, get_state(updated_state.id)}
     end
   end
 
   defp check_for_stale_agent_data(state)
-    when is_binary(state.id) do
+       when is_binary(state.id) do
     existing_agent = get_state(state.id)
-    if DateTime.compare(existing_agent.updated_at,state.updated_at) == :eq do
+
+    if DateTime.compare(existing_agent.updated_at, state.updated_at) == :eq do
       :ok
     else
       {
@@ -115,10 +113,11 @@ defmodule ClusteredAgents.State do
   end
 
   def delete_state(id) when is_binary(id) do
-    pid = id
-    |> pid_for_state()
-    |> List.first()
-    |> elem(0)
+    pid =
+      id
+      |> pid_for_state()
+      |> List.first()
+      |> elem(0)
 
     Horde.DynamicSupervisor.terminate_child(
       ClusteredAgents.StateSupervisor,
@@ -133,6 +132,8 @@ defmodule ClusteredAgents.State do
   end
 
   @doc """
+  Retrieves the current state of a specified agent.
+
   Reading the current value of a stateful object must support a retry scenario:
   the case where a object is being relocated elsewhere in the cluster but the
   registry has not yet been updated to specify the new pid; in this case,

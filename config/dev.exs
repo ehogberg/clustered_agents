@@ -73,8 +73,6 @@ config :swoosh, :api_client, false
 
 # Local libcluster support
 config :clustered_agents, :cluster_topologies,
-  [
-    local_epmd: [
-      strategy: Elixir.Cluster.Strategy.LocalEpmd,
-    ]
+  local_epmd: [
+    strategy: Elixir.Cluster.Strategy.LocalEpmd
   ]

@@ -12,6 +12,7 @@ defmodule ClusteredAgentsWeb.PageController do
   def cluster(conn, _params) do
     render(conn, :cluster,
       supervisors: Cluster.members(ClusteredAgents.StateSupervisor),
-      registries: Cluster.members(ClusteredAgents.Registry))
+      registries: Cluster.members(ClusteredAgents.Registry)
+    )
   end
 end

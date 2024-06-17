@@ -9,7 +9,6 @@ defmodule ClusteredAgents.Application do
   def start(_type, _args) do
     children = [
       ClusteredAgentsWeb.Telemetry,
-      {DNSCluster, query: Application.get_env(:clustered_agents, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: ClusteredAgents.PubSub},
       cluster_supervisor_spec(),
       state_collection_supervisor_spec(),
@@ -25,10 +24,9 @@ defmodule ClusteredAgents.Application do
 
   defp state_collection_supervisor_spec() do
     child_specs = [
-      {Horde.DynamicSupervisor, name: ClusteredAgents.StateSupervisor,
-        strategy: :one_for_one, members: :auto},
-      {Horde.Registry, name: ClusteredAgents.Registry, keys: :unique,
-        members: :auto}
+      {Horde.DynamicSupervisor,
+       name: ClusteredAgents.StateSupervisor, strategy: :one_for_one, members: :auto},
+      {Horde.Registry, name: ClusteredAgents.Registry, keys: :unique, members: :auto}
     ]
 
     opts = [
@@ -45,16 +43,17 @@ defmodule ClusteredAgents.Application do
   end
 
   defp cluster_supervisor_spec() do
-    topologies = Application.get_env(
-      :clustered_agents, :cluster_topologies
-    ) || []
+    topologies =
+      Application.get_env(
+        :clustered_agents,
+        :cluster_topologies
+      ) || []
 
     {
       Cluster.Supervisor,
       [topologies, [name: ClusteredAgents.ClusterSupervisor]]
     }
   end
-
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.

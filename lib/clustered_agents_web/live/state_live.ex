@@ -8,6 +8,7 @@ defmodule ClusteredAgentsWeb.StateLive do
   def mount(_, _, socket) do
     Endpoint.subscribe("agents")
     :net_kernel.monitor_nodes(true)
+
     {
       :ok,
       socket
@@ -23,9 +24,9 @@ defmodule ClusteredAgentsWeb.StateLive do
     do: assign(socket, :state_object, state_object)
 
   defp assign_cluster_nodes(socket),
-   do: assign(socket, :cluster_nodes, [Node.self() | Node.list()])
+    do: assign(socket, :cluster_nodes, [Node.self() | Node.list()])
 
-  defp assign_form(socket, cs), do: assign(socket, :form , to_form(cs))
+  defp assign_form(socket, cs), do: assign(socket, :form, to_form(cs))
 
   defp assign_persistence_type(socket, persistence_type),
     do: assign(socket, :persistence_type, persistence_type)
@@ -34,16 +35,18 @@ defmodule ClusteredAgentsWeb.StateLive do
     agent_list =
       Enum.map(
         State.state_ids(),
-        fn {id,pid} -> %{id: id, pid: pid, node: node(pid)} end
+        fn {id, pid} -> %{id: id, pid: pid, node: node(pid)} end
       )
-      stream(socket, :agent_list, agent_list)
+
+    stream(socket, :agent_list, agent_list)
   end
 
   @impl true
   def handle_event("validate", %{"state" => params}, socket) do
-    cs = %State{}
-    |> State.changeset(params)
-    |> Map.put(:action, :validate)
+    cs =
+      %State{}
+      |> State.changeset(params)
+      |> Map.put(:action, :validate)
 
     {
       :noreply,
@@ -58,7 +61,7 @@ defmodule ClusteredAgentsWeb.StateLive do
   end
 
   @impl true
-  def handle_event("cancel_edit",_, socket) do
+  def handle_event("cancel_edit", _, socket) do
     {
       :noreply,
       socket
@@ -71,6 +74,7 @@ defmodule ClusteredAgentsWeb.StateLive do
   @impl true
   def handle_event("edit_state", %{"state-id" => state_id}, socket) do
     state = State.get_state(state_id)
+
     {
       :noreply,
       socket
@@ -83,16 +87,16 @@ defmodule ClusteredAgentsWeb.StateLive do
   @impl true
   def handle_event("delete_state", %{"state-id" => state_id}, socket) do
     :ok = State.delete_state(state_id)
+
     {
       :noreply,
       socket
     }
   end
 
-
   defp persist_state(:add, params, socket) do
     case State.add_state(params) do
-      {:ok, (%State{} = state)} ->
+      {:ok, %State{} = state} ->
         {
           :noreply,
           socket
@@ -112,7 +116,7 @@ defmodule ClusteredAgentsWeb.StateLive do
 
   defp persist_state(:update, params, socket) do
     case State.update_state(socket.assigns.state_object, params) do
-      {:ok, (%State{} = _state)} ->
+      {:ok, %State{} = _state} ->
         id = socket.assigns.state_object.id
 
         {
@@ -126,6 +130,7 @@ defmodule ClusteredAgentsWeb.StateLive do
 
       {:error, {:stale_agent_data, id, _, _}} ->
         current_agent_state = State.get_state(id)
+
         {
           :noreply,
           socket
@@ -148,12 +153,12 @@ defmodule ClusteredAgentsWeb.StateLive do
 
   @impl true
   def handle_info(
-    %{
-      event: "agent:started",
-      payload: %{id: new_agent_id, pid: pid}
-    },
-    socket
-  ) do
+        %{
+          event: "agent:started",
+          payload: %{id: new_agent_id, pid: pid}
+        },
+        socket
+      ) do
     node = if is_pid(pid), do: node(pid), else: nil
 
     {
@@ -165,38 +170,40 @@ defmodule ClusteredAgentsWeb.StateLive do
 
   @impl true
   def handle_info(
-    %{
-      event: "agent:stopped",
-      payload: %{id: stopped_agent_id}
-    },
-    socket
-  ) do
+        %{
+          event: "agent:stopped",
+          payload: %{id: stopped_agent_id}
+        },
+        socket
+      ) do
     {
       :noreply,
       socket
-      |> stream_delete(:agent_list,%{id: stopped_agent_id})
+      |> stream_delete(:agent_list, %{id: stopped_agent_id})
     }
   end
 
-
   @impl true
   def handle_info({:nodeup, node_id}, socket) do
-    node_list = [node_id | socket.assigns.cluster_nodes]
-
     {
       :noreply,
       socket
-      |> assign(:cluster_nodes, node_list)
+      |> assign(
+        :cluster_nodes,
+        [node_id | socket.assigns.cluster_nodes]
+      )
     }
   end
 
   @impl true
   def handle_info({:nodedown, node_id}, socket) do
-    node_list = List.delete(socket.assigns.cluster_nodes, node_id)
     {
       :noreply,
       socket
-      |> assign(:cluster_nodes, node_list)
+      |> assign(
+        :cluster_nodes,
+        List.delete(socket.assigns.cluster_nodes, node_id)
+      )
     }
   end
 
@@ -212,5 +219,4 @@ defmodule ClusteredAgentsWeb.StateLive do
 
   def editor_title(%{persistence_type: :update} = assigns),
     do: ~H|<h2 class="font-bold text-blue-700">Updating Stateful Object</h2>|
-
 end

@@ -1,6 +1,6 @@
 services:
   app:
-    image: ehogberg/clustered_agents:6
+    image: ehogberg/clustered_agents:7
     environment:
       - SECRET_KEY_BASE=rsScWn06eosWdKhy3vHdyY5NKV0zYWBF8o/vxJZiFFsojPbVDENYf71SS6bZvSfZ
       - RELEASE_COOKIE=delicious

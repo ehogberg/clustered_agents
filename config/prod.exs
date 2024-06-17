@@ -17,14 +17,11 @@ config :swoosh, local: false
 # Do not print debug messages in production
 config :logger, level: :info
 
-
 config :clustered_agents, :cluster_topologies,
-  [
-    gossip: [
-      strategy: Elixir.Cluster.Strategy.Gossip,
-      config: [
-        debug: true
-      ]
+  gossip: [
+    strategy: Elixir.Cluster.Strategy.Gossip,
+    config: [
+      debug: true
     ]
   ]
 
